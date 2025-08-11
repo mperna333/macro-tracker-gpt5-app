@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabaseClient';
-import WeeklyChart from '../components/WeeklyChart';
+
+import dynamic from 'next/dynamic';
+const WeeklyChart = dynamic(() => import('../components/WeeklyChart'), { ssr: false });
+
 
 export default function Dashboard() {
   const router = useRouter();
