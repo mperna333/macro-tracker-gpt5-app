@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabaseClient';
 
-import dynamic from 'next/dynamic';
-const WeeklyChart = dynamic(() => import('../components/WeeklyChart'), { ssr: false });
+ import dynamic from 'next/dynamic';
+ const WeeklyChart = dynamic(() => import('../components/WeeklyChart'), { ssr: false });
+import SpeechMealInput from '../components/SpeechMealInput';
 
 
 export default function Dashboard() {
@@ -31,6 +32,23 @@ export default function Dashboard() {
       .order('date', { ascending: true });
     setMeals(data || []);
   };
+  
+// Add this below getMeals (or anywhere above the return)
+const handleParsedMeal = async ({ source_text, calories, protein, carbs, fat }) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  await supabase.from('meals').insert({
+    user_id: user.id,
+    date: new Date().toISOString().split('T')[0],
+    meal_name: `Voice: ${source_text.slice(0, 40)}`,
+    source_text,
+    calories: Math.round(calories),
+    protein: Math.round(protein),
+    carbs: Math.round(carbs),
+    fat: Math.round(fat),
+    meal_time: new Date().toISOString(),
+  });
+  await getMeals(user.id);
+};
 
   const addMeal = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -74,7 +92,7 @@ export default function Dashboard() {
         <Card label="Carbs"    value={`${totals.carbs}g / ${profile.carbs}g`} />
         <Card label="Fat"      value={`${totals.fat}g / ${profile.fat}g`} />
       </div>
-
+<SpeechMealInput onParsed={handleParsedMeal} />
       <div className="mb-6 bg-purple4 p-4 rounded-2xl">
         <h2 className="text-lg mb-3">Add Meal</h2>
         <input placeholder="Meal name" value={newMeal.name} onChange={e => setNewMeal({ ...newMeal, name: e.target.value })} className="bg-purple3 p-3 rounded mb-2 w-full" />
